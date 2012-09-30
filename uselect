@@ -163,29 +163,32 @@ class UI:
 		self.window.erase();
 
 		line_count = min(self.height - 1, len(self.selector.lines) - self.first_line);
-		for y in range(0, line_count):
-			self._draw_line(y, self.first_line + y);
-
+		for y in range(0, min(line_count, self.height)):
+			line_no = y + self.first_line;
+			if line_no != self.cursor:
+				self._draw_line(y, self.selector.lines[line_no], False);
+		self._draw_line(self.cursor - self.first_line, self.selector.lines[self.cursor], True);
+		self.window.move(self.cursor - self.first_line, 0);
 		self.window.refresh();
 
-	def _draw_line(self, y, line_no):
-		line = self.selector.lines[line_no];
-		prefix = '  ';
+	def _draw_line(self, y, line, is_cursor):
 		color = 'cursor_';
-		if line_no != self.cursor:
+		if not is_cursor:
 			color = 'no' + color;
 		if line.is_selected:
-			color = color + 'selected';
+			color += 'selected';
 			prefix = '# ';
 		elif line.can_select:
-			color = color + 'selectable';
+			color += 'selectable';
 			prefix = '. ';
 		else:
-			color = color + 'unselectable';
+			color += 'unselectable';
+			prefix = '  ';
 		self._set_color(color);
 		text = prefix + line.text;
-		suffix = ' ' * (self.width - len(text));
-		self.window.addstr(y, 0, text + suffix);
+		if is_cursor:
+			text += ' ' * (self.width - len(text));
+		self.window.addstr(y, 0, text);
 
 	def _update(self):
 		key = self.window.getch();
