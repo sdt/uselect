@@ -1,5 +1,6 @@
 #!/usr/bin/env python2.7
 
+import argparse;
 import curses;
 import itertools;
 import os;
@@ -267,11 +268,22 @@ class UI:
 		self.window.attrset(self._color_table[name]);
 
 #------------------------------------------------------------------------------
-def make_wanted(pattern):
+def make_wanted(pattern, invert):
 	regex = re.compile(pattern);
-	return lambda line: regex.search(line) != None;
+	if invert:
+		return lambda line: line != "\n" and regex.search(line) == None;
+	else:
+		return lambda line: line != "\n" and regex.search(line) != None;
 
-s = Selector(make_wanted('\.pm$'), sys.stdin.readlines());
-u = UI(s);
-u.run();
-s.print_lines();
+def main():
+	parser = argparse.ArgumentParser();
+	parser.add_argument('-s', '--select-regex', dest='select', default='.', help='select lines matching regex SELECT');
+	parser.add_argument('-i', '--invert-selection', dest='invert', action='store_true', help='select lines NOT matching regex SELECT');
+	args = parser.parse_args();
+	r = make_wanted(args.select, args.invert);
+	s = Selector(r, sys.stdin.readlines());
+	u = UI(s);
+	u.run();
+	s.print_lines();
+
+main();
