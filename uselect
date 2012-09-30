@@ -29,7 +29,7 @@ class Console:
 class Line:
 
 	def __init__(self, text, can_select):
-		self.text = text;
+		self.text = text.rstrip('\n\r');
 		self.can_select = can_select;
 		self.is_selected = 0;
 
@@ -65,7 +65,7 @@ class Selector:
 	def print_lines(self):
 		for line in self.lines:
 			if line.is_selected:
-				sys.stdout.write(line.text);
+				sys.stdout.write(line.text + '\n');
 
 #------------------------------------------------------------------------------
 class UI:
@@ -183,7 +183,9 @@ class UI:
 		else:
 			color = color + 'unselectable';
 		self._set_color(color);
-		self.window.addstr(y, 0, prefix + line.text);
+		text = prefix + line.text;
+		suffix = ' ' * (self.width - len(text));
+		self.window.addstr(y, 0, text + suffix);
 
 	def _update(self):
 		key = self.window.getch();
