@@ -70,30 +70,32 @@ class Selector:
 #------------------------------------------------------------------------------
 class UI:
 
-	color_name = {
-		'black':     [ curses.COLOR_BLACK,   0 ],
-		'white':     [ curses.COLOR_WHITE,   0 ],
-		'red':       [ curses.COLOR_RED,     0 ],
-		'yellow':    [ curses.COLOR_YELLOW,  0 ],
-		'green':     [ curses.COLOR_GREEN,   0 ],
-		'cyan':      [ curses.COLOR_CYAN,    0 ],
-		'blue':      [ curses.COLOR_BLUE,    0 ],
-		'magenta':   [ curses.COLOR_MAGENTA, 0 ],
+	fg_bg_color = {
+		'black':     curses.COLOR_BLACK,
+		'white':     curses.COLOR_WHITE,
+		'red':       curses.COLOR_RED,
+		'yellow':    curses.COLOR_YELLOW,
+		'green':     curses.COLOR_GREEN,
+		'cyan':      curses.COLOR_CYAN,
+		'blue':      curses.COLOR_BLUE,
+		'magenta':   curses.COLOR_MAGENTA,
 
-		'base02':    [ curses.COLOR_BLACK,   0 ],
-		'base2':     [ curses.COLOR_WHITE,   0 ],
-		'base03':    [ curses.COLOR_BLACK,   curses.A_BOLD ],
-		'base01':    [ curses.COLOR_GREEN,   curses.A_BOLD ],
-		'base00':    [ curses.COLOR_YELLOW,  curses.A_BOLD ],
-		'base0':     [ curses.COLOR_BLUE,    curses.A_BOLD ],
-		'base1':     [ curses.COLOR_CYAN,    curses.A_BOLD ],
-		'base3':     [ curses.COLOR_WHITE,   curses.A_BOLD ],
-		'orange':    [ curses.COLOR_RED,     curses.A_BOLD ],
-		'violet':    [ curses.COLOR_MAGENTA, curses.A_BOLD ],
+		'base02':    curses.COLOR_BLACK,
+		'base2':     curses.COLOR_WHITE,
 
-		'default':   [ 0, 0 ],
-		'':          [ 0, 0 ],
-		None:        [ 0, 0 ],
+		'default':   -1,
+		'':          -1,
+	};
+
+	fg_only_color = {
+		'base03':    curses.COLOR_BLACK,
+		'base01':    curses.COLOR_GREEN,
+		'base00':    curses.COLOR_YELLOW,
+		'base0':     curses.COLOR_BLUE,
+		'base1':     curses.COLOR_CYAN,
+		'base3':     curses.COLOR_WHITE,
+		'orange':    curses.COLOR_RED,
+		'violet':    curses.COLOR_MAGENTA,
 	};
 
 	attr_name = {
@@ -103,8 +105,8 @@ class UI:
 		'reverse':   curses.A_REVERSE,
 		'standout':  curses.A_STANDOUT,
 		'underline': curses.A_UNDERLINE,
-		'':		 	 0,
-		None:		 0,
+		'default':   0,
+		'':          0,
 	};
 
 	colors = {
@@ -248,19 +250,19 @@ class UI:
 		self.height, self.width = self.window.getmaxyx();
 
 	def _parse_color(self, color):
-		components = color.split(',');
+		c = color.split(',');
 		fg, bg, attr = (0, -1, 0);
-		n = len(components);
+		n = len(c);
 		if (n >= 1):
-			c = self.color_name[components[0]];
-			fg    = c[0];
-			attr |= c[1];
+			if c[0] in self.fg_bg_color:
+				fg = self.fg_bg_color[c[0]];
+			else:
+				fg = self.fg_only_color[c[0]];
+				attr |= curses.A_BOLD;
 		if (n >= 2):
-			c = self.color_name[components[1]];
-			bg    = c[0];
-			attr |= c[1];
+			bg = self.fg_bg_color[c[1]];
 		if (n >= 3):
-			attr |= self.attr_name[components[2]];
+			attr |= self.attr_name[c[2]];
 		return self._make_color(fg, bg, attr);
 
 	def _make_color(self, fg, bg, attr):
