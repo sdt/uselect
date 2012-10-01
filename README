@@ -1,0 +1,8 @@
+usage: uselect [-h] [-s SELECT] [-i]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -s SELECT, --select-regex SELECT
+                        select lines matching regex SELECT
+  -i, --invert-selection
+                        select lines NOT matching regex SELECT
