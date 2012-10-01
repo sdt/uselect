@@ -62,6 +62,11 @@ class Selector:
 		else:
 			return self.lines[line].next_selectable
 
+	def set_selected(self, is_selected):
+		for line in self.lines:
+			if line.can_select:
+				line.is_selected = is_selected(line)
+
 	def print_lines(self):
 		for line in self.lines:
 			if line.is_selected:
@@ -216,6 +221,12 @@ class UI:
 			self._cursor_to_end(+1)
 		elif key == ord(' '):
 			line.is_selected ^= line.can_select
+		elif key == ord('t'):
+			self.selector.set_selected(lambda line: not line.is_selected)
+		elif key == ord('a'):
+			self.selector.set_selected(lambda line: True)
+		elif key == ord('A'):
+			self.selector.set_selected(lambda line: False)
 		else:
 			return 0
 
