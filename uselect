@@ -43,10 +43,13 @@ class Selector:
 		line_count = len(self.lines)
 
 		prev_selectable = None
+		self.lines_selectable = 0
 		for i, line in enumerate(self.lines):
 			line.prev_selectable = prev_selectable
 			if line.can_select:
 				prev_selectable = i
+				line.selectable_index = self.lines_selectable
+				self.lines_selectable += 1
 		self.last_selectable = prev_selectable
 
 		next_selectable = None
@@ -55,6 +58,13 @@ class Selector:
 			if line.can_select:
 				next_selectable = line_count - j - 1
 		self.first_selectable = next_selectable
+
+	def lines_selected(self):
+		selected = 0
+		for line in self.lines:
+			if line.is_selected:
+				selected += 1
+		return selected
 
 	def next_selectable(self, line, dirn):
 		if dirn < 0:
@@ -121,10 +131,12 @@ class UI:
 		'nocursor_selected': 'green',
 		'nocursor_selectable': 'base0',
 		'nocursor_unselectable': 'base01',
+		'status': 'base1,base02',
 	}
 
-	def __init__(self, selector):
+	def __init__(self, selector, message):
 		self.selector = selector
+		self.message  = message
 
 	def _init_curses(self, window):
 		self.window = window
@@ -133,6 +145,7 @@ class UI:
 		curses.start_color()
 		curses.use_default_colors()
 		window.keypad(1)
+		window.scrollok(0)
 		self._update_size()
 		self._exit_requested = 0
 		self._next_color_pair = 1
@@ -175,7 +188,7 @@ class UI:
 			if line_no != self.cursor:
 				self._draw_line(y, self.selector.lines[line_no], False)
 		self._draw_line(self.cursor - self.first_line, self.selector.lines[self.cursor], True)
-		self.window.move(self.cursor - self.first_line, 0)
+		self._draw_status();
 		self.window.refresh()
 
 	def _draw_line(self, y, line, is_cursor):
@@ -196,6 +209,17 @@ class UI:
 		if is_cursor:
 			text += ' ' * (self.width - len(text))
 		self.window.addstr(y, 0, text)
+
+	def _draw_status(self):
+		cursor_line = self.selector.lines[ self.cursor ];
+		status_left = '%d of %d, %d selected' % ( cursor_line.selectable_index + 1, self.selector.lines_selectable, self.selector.lines_selected() )
+		status_right = self.message
+
+		# Can't draw the bottom/right corner of the window
+		gap = ' ' * (self.width - len(status_left) - len(status_right) - 1)
+
+		self._set_color('status')
+		self.window.addstr(self.height-1, 0, status_left + gap + status_right);
 
 	def _update(self):
 		key = self.window.getch()
@@ -303,13 +327,14 @@ def get_args():
 	)
 	parser.add_argument('-s', '--select-regex', dest='select', default='.', help='select lines matching regex SELECT')
 	parser.add_argument('-i', '--invert-selection', dest='invert', action='store_true', help='select lines NOT matching regex SELECT')
+	parser.add_argument('-m', '--message', dest='message', default='uselect', help='message to display in status bar')
 	return parser.parse_args()
 
 def main():
 	args = get_args()
 	line_filter = make_filter(args.select, args.invert)
 	selector = Selector(line_filter, sys.stdin)
-	ui = UI(selector)
+	ui = UI(selector, args.message)
 	ui.run()
 	selector.print_lines()
 
