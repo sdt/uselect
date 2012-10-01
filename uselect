@@ -283,7 +283,13 @@ def make_filter(pattern, invert):
 		return lambda line: line != "\n" and regex.search(line) != None
 
 def get_args():
-	parser = argparse.ArgumentParser()
+	parser = argparse.ArgumentParser(
+		description='''
+			uselect is an interactive line filter intended for use in pipelines.
+			Selected input lines are written to stdout.
+		''',
+		epilog='https://github.com/sdt/uselect',
+	)
 	parser.add_argument('-s', '--select-regex', dest='select', default='.', help='select lines matching regex SELECT')
 	parser.add_argument('-i', '--invert-selection', dest='invert', action='store_true', help='select lines NOT matching regex SELECT')
 	return parser.parse_args()

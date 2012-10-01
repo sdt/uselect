@@ -1,8 +1,13 @@
 usage: uselect [-h] [-s SELECT] [-i]
 
+uselect is an interactive line filter intended for use in pipelines. Selected
+input lines are written to stdout.
+
 optional arguments:
   -h, --help            show this help message and exit
   -s SELECT, --select-regex SELECT
                         select lines matching regex SELECT
   -i, --invert-selection
                         select lines NOT matching regex SELECT
+
+https://github.com/sdt/uselect
