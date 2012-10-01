@@ -323,7 +323,8 @@ def get_args():
 	parser = argparse.ArgumentParser(
 		description='''
 			uselect is an interactive line filter intended for use in pipelines.
-			Selected input lines are written to stdout.
+			Input lines are read from the command-line or stdin, and displayed
+			to the user. Selected input lines are written to stdout.
 		''',
 		epilog='https://github.com/sdt/uselect',
 	)
@@ -331,12 +332,16 @@ def get_args():
 	parser.add_argument('-i', '--invert-selection', dest='invert', action='store_true', help='select lines NOT matching regex SELECT')
 	parser.add_argument('-m', '--message', dest='message', default='uselect', help='message to display in status bar')
 	parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__)
+	parser.add_argument('item', nargs='*', help='read items from command-line rather than stdin')
 	return parser.parse_args()
 
 def main():
 	args = get_args()
 	line_filter = make_filter(args.select, args.invert)
-	selector = Selector(line_filter, sys.stdin)
+	if len(args.item) > 0:
+		selector = Selector(line_filter, args.item)
+	else:
+		selector = Selector(line_filter, sys.stdin)
 	if selector.lines_selectable == 0:
 		print >> sys.stderr, 'No selectable lines'
 		sys.exit(1)

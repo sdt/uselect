@@ -1,7 +1,11 @@
-usage: uselect [-h] [-s SELECT] [-i] [-m MESSAGE] [-v]
+usage: uselect [-h] [-s SELECT] [-i] [-m MESSAGE] [-v] [item [item ...]]
 
-uselect is an interactive line filter intended for use in pipelines. Selected
-input lines are written to stdout.
+uselect is an interactive line filter intended for use in pipelines. Input
+lines are read from the command-line or stdin, and displayed to the user.
+Selected input lines are written to stdout.
+
+positional arguments:
+  item                  read items from command-line rather than stdin
 
 optional arguments:
   -h, --help            show this help message and exit
