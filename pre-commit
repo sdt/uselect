@@ -1,0 +1,8 @@
+#!/bin/sh
+#
+# Pre-commit hook script which automatically updates the README file.
+#
+# To enable this hook, copy this file to ".git/hooks/pre-commit".
+
+./uselect -h > README
+git add README
