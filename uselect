@@ -334,6 +334,9 @@ def main():
 	args = get_args()
 	line_filter = make_filter(args.select, args.invert)
 	selector = Selector(line_filter, sys.stdin)
+	if selector.lines_selectable == 0:
+		print >> sys.stderr, 'No selectable lines'
+		sys.exit(1)
 	ui = UI(selector, args.message)
 	ui.run()
 	selector.print_lines()
