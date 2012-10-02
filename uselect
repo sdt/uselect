@@ -7,7 +7,7 @@ import os
 import re
 import sys
 
-__version__ = '0.1';
+__version__ = '0.1'
 
 #------------------------------------------------------------------------------
 class Console:
@@ -54,7 +54,7 @@ class Selector:
 	def next_selectable(self, line, dirn):
 		index = line.index_active + dirn
 		if index < 0 or index >= len(self.active_lines):
-			return None;
+			return None
 		return self.active_lines[index]
 
 	def set_selected(self, is_selected):
@@ -62,7 +62,7 @@ class Selector:
 			line.is_selected = is_selected(line)
 
 	def lines_selected(self):
-		count = 0;
+		count = 0
 		for line in self.active_lines:
 			if line.is_selected:
 				count += 1
@@ -180,7 +180,7 @@ class UI:
 			if line_no != self.cursor_line.index_all:
 				self._draw_line(y, lines[line_no])
 		self._draw_line(self.cursor_line.index_all - self.first_line, self.cursor_line)
-		self._draw_status();
+		self._draw_status()
 		self.window.refresh()
 
 	def _draw_line(self, y, line):
@@ -211,7 +211,7 @@ class UI:
 		gap = ' ' * (self.width - len(status_left) - len(status_right) - 1)
 
 		self._set_color('status')
-		self.window.addstr(self.height-1, 0, status_left + gap + status_right);
+		self.window.addstr(self.height-1, 0, status_left + gap + status_right)
 
 	def _update(self):
 		key = self.window.getch()
