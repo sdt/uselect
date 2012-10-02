@@ -30,57 +30,46 @@ class Console:
 #------------------------------------------------------------------------------
 class Line:
 
-	def __init__(self, text, can_select):
+	def __init__(self, text):
 		self.text = text.rstrip('\n\r')
-		self.can_select = can_select
 		self.is_selected = 0
+		self.index_active = -1
+		self.index_all = -1
 
 #------------------------------------------------------------------------------
 class Selector:
 
 	def __init__(self, line_filter, infile):
 		self.x = 1
-		self.lines = map(lambda t: Line(t, line_filter(t)), infile)
-
-		line_count = len(self.lines)
-
-		prev_selectable = None
-		self.lines_selectable = 0
-		for i, line in enumerate(self.lines):
-			line.prev_selectable = prev_selectable
-			if line.can_select:
-				prev_selectable = i
-				line.selectable_index = self.lines_selectable
-				self.lines_selectable += 1
-		self.last_selectable = prev_selectable
-
-		next_selectable = None
-		for j, line in enumerate(reversed(self.lines)):
-			line.next_selectable = next_selectable
-			if line.can_select:
-				next_selectable = line_count - j - 1
-		self.first_selectable = next_selectable
-
-	def lines_selected(self):
-		selected = 0
-		for line in self.lines:
-			if line.is_selected:
-				selected += 1
-		return selected
+		self.all_lines =  []
+		self.active_lines = []
+		for text_line in map(lambda t: t.rstrip('\n\r'), infile):
+			line = Line(text_line)
+			line.index_all = len(self.all_lines)
+			self.all_lines.append(line)
+			if line_filter(text_line):
+				line.index_active = len(self.active_lines)
+				self.active_lines.append(line)
 
 	def next_selectable(self, line, dirn):
-		if dirn < 0:
-			return self.lines[line].prev_selectable
-		else:
-			return self.lines[line].next_selectable
+		index = line.index_active + dirn
+		if index < 0 or index >= len(self.active_lines):
+			return None;
+		return self.active_lines[index]
 
 	def set_selected(self, is_selected):
-		for line in self.lines:
-			if line.can_select:
-				line.is_selected = is_selected(line)
+		for line in self.active_lines:
+			line.is_selected = is_selected(line)
+
+	def lines_selected(self):
+		count = 0;
+		for line in self.active_lines:
+			if line.is_selected:
+				count += 1
+		return count
 
 	def print_lines(self):
-		for line in self.lines:
+		for line in self.active_lines:
 			if line.is_selected:
 				sys.stdout.write(line.text + '\n')
 
@@ -166,8 +155,8 @@ class UI:
 
 	def _run(self, window):
 		self._init_curses(window)
-		self.cursor = self.selector.first_selectable
-		self.first_line = max(0, self.cursor - self.height + 2)
+		self.cursor_line = self.selector.active_lines[0]
+		self.first_line = max(0, self.cursor_line.index_all - self.height + 2)
 
 		need_redraw = 1
 		while not self._exit_requested:
@@ -184,23 +173,25 @@ class UI:
 		self._update_size()
 		self.window.erase()
 
-		line_count = min(self.height - 1, len(self.selector.lines) - self.first_line)
+		lines = self.selector.all_lines
+		line_count = min(self.height - 1, len(lines) - self.first_line)
 		for y in range(0, min(line_count, self.height)):
 			line_no = y + self.first_line
-			if line_no != self.cursor:
-				self._draw_line(y, self.selector.lines[line_no], False)
-		self._draw_line(self.cursor - self.first_line, self.selector.lines[self.cursor], True)
+			if line_no != self.cursor_line.index_all:
+				self._draw_line(y, lines[line_no])
+		self._draw_line(self.cursor_line.index_all - self.first_line, self.cursor_line)
 		self._draw_status();
 		self.window.refresh()
 
-	def _draw_line(self, y, line, is_cursor):
+	def _draw_line(self, y, line):
 		color = 'cursor_'
+		is_cursor = (line == self.cursor_line)
 		if not is_cursor:
 			color = 'no' + color
 		if line.is_selected:
 			color += 'selected'
 			prefix = '# '
-		elif line.can_select:
+		elif line.index_active >= 0:
 			color += 'selectable'
 			prefix = '. '
 		else:
@@ -213,8 +204,7 @@ class UI:
 		self.window.addstr(y, 0, text)
 
 	def _draw_status(self):
-		cursor_line = self.selector.lines[ self.cursor ];
-		status_left = '%d of %d, %d selected' % ( cursor_line.selectable_index + 1, self.selector.lines_selectable, self.selector.lines_selected() )
+		status_left = '%d of %d, %d selected' % ( self.cursor_line.index_active + 1, len(self.selector.active_lines), self.selector.lines_selected() )
 		status_right = self.message
 
 		# Can't draw the bottom/right corner of the window
@@ -225,16 +215,16 @@ class UI:
 
 	def _update(self):
 		key = self.window.getch()
-		line = self.selector.lines[self.cursor]
+		line = self.cursor_line
 
 		if key == ord('\n'):
 			# If there are no selected lines, select this one
 			# (sounds wrong, but feels quite natural in practice)
-			if next(itertools.ifilter(lambda line: line.is_selected, self.selector.lines), None) == None:
+			if next(itertools.ifilter(lambda line: line.is_selected, self.selector.active_lines), None) == None:
 				line.is_selected = 1
 			self._exit_requested = 1
 		elif key == ord('q'):
-			for line in self.selector.lines:
+			for line in self.selector.active_lines:
 				line.is_selected = 0
 			self._exit_requested = 1
 		elif key == ord('k'):
@@ -246,7 +236,7 @@ class UI:
 		elif key == ord('G'):
 			self._cursor_to_end(+1)
 		elif key == ord(' '):
-			line.is_selected ^= line.can_select
+			line.is_selected ^= 1
 		elif key == ord('t'):
 			self.selector.set_selected(lambda line: not line.is_selected)
 		elif key == ord('a'):
@@ -256,31 +246,32 @@ class UI:
 		else:
 			return 0
 
-		if self.cursor < self.first_line:
-			self.first_line = self.cursor
-		elif self.cursor >= self.first_line + self.height - 1:
-			self.first_line = self.cursor - self.height + 2
+		cursor_index = self.cursor_line.index_all
+		if cursor_index < self.first_line:
+			self.first_line = cursor_index
+		elif cursor_index >= self.first_line + self.height - 1:
+			self.first_line = cursor_index - self.height + 2
 
 		return 1
 
 	def _set_cursor(self, new_cursor):
 		if new_cursor != None:
-			self.cursor = new_cursor
+			self.cursor_line = new_cursor
 		return new_cursor
 
 	def _move_cursor(self, dirn):
-		new_cursor = self.selector.next_selectable(self.cursor, dirn)
+		new_cursor = self.selector.next_selectable(self.cursor_line, dirn)
 		if self._set_cursor(new_cursor) == None:
 			self._cursor_to_end(dirn)
 
 	def _cursor_to_end(self, dirn):
-		slr = self.selector
-		line_count = len(slr.lines)
+		lines = self.selector
 		if dirn < 0:
-			self._set_cursor(slr.first_selectable)
+			self._set_cursor(self.selector.active_lines[0])
 			self._first_line = 0
 		else:
-			self._set_cursor(slr.last_selectable)
+			self._set_cursor(self.selector.active_lines[-1])
+			line_count = len(self.selector.all_lines)
 			self._first_line = max(0, line_count - self.height + 1)
 
 	def _update_size(self):
@@ -315,9 +306,9 @@ class UI:
 def make_filter(pattern, invert):
 	regex = re.compile(pattern)
 	if invert:
-		return lambda line: line != "\n" and regex.search(line) == None
+		return lambda line: line != '' and regex.search(line) == None
 	else:
-		return lambda line: line != "\n" and regex.search(line) != None
+		return lambda line: line != '' and regex.search(line) != None
 
 def get_args():
 	parser = argparse.ArgumentParser(
@@ -342,7 +333,7 @@ def main():
 		selector = Selector(line_filter, args.item)
 	else:
 		selector = Selector(line_filter, sys.stdin)
-	if selector.lines_selectable == 0:
+	if len(selector.active_lines) == 0:
 		print >> sys.stderr, 'No selectable lines'
 		sys.exit(1)
 	ui = UI(selector, args.message)
