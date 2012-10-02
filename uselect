@@ -32,7 +32,7 @@ class Line:
 
 	def __init__(self, text):
 		self.text = text.rstrip('\n\r')
-		self.is_selected = 0
+		self.is_selected = False
 		self.index_active = -1
 		self.index_all = -1
 
@@ -139,7 +139,7 @@ class UI:
 		window.keypad(1)
 		window.scrollok(0)
 		self._update_size()
-		self._exit_requested = 0
+		self._exit_requested = False
 		self._next_color_pair = 1
 		self._color_table = {}
 		for k,v in UI.colors.iteritems():
@@ -159,7 +159,7 @@ class UI:
 		self.cursor_line = self.selector.active_lines[0]
 		self.first_line = max(0, self.cursor_line.index_all - self.height + 2)
 
-		need_redraw = 1
+		need_redraw = True
 		while not self._exit_requested:
 			if need_redraw:
 				self._draw()
@@ -232,10 +232,10 @@ class UI:
 		# (sounds wrong, but feels quite natural in practice)
 		if keep_selection:
 			if next(itertools.ifilter(lambda line: line.is_selected, self.selector.active_lines), None) == None:
-				self.cursor_line.is_selected = 1
+				self.cursor_line.is_selected = True
 		else:
 			self.selector.set_selected(lambda line: False)
-		self._exit_requested = 1
+		self._exit_requested = True
 
 	def _set_cursor(self, new_cursor):
 		if new_cursor != None:
