@@ -128,7 +128,7 @@ class UI:
 	def __init__(self, selector, message):
 		self.selector = selector
 		self.message  = message
-		self.controller = Controller(self, selector)
+		self.controller = Controller(self)
 
 	def _init_curses(self, window):
 		self.window = window
@@ -237,6 +237,13 @@ class UI:
 			self.selector.set_selected(lambda line: False)
 		self._exit_requested = True
 
+	def _select_all(self, state):
+		if state == '^':
+			func = lambda line: not line.is_selected
+		else:
+			func = lambda line: state
+		self.selector.set_selected(func)
+
 	def _set_cursor(self, new_cursor):
 		if new_cursor != None:
 			self.cursor_line = new_cursor
@@ -319,9 +326,8 @@ class Controller:
 		'select_none':		[ 'A', '-' ],
 	}
 
-	def __init__(self, ui, selector):
+	def __init__(self, ui):
 		self.ui = ui
-		self.selector = selector
 		self.key_table = { }
 		for cmd, keys in Controller.cmd_table.items():
 			for key in keys:
@@ -343,12 +349,9 @@ class Controller:
 	def _cmd_cursor_home(self):		self.ui._cursor_to_end(-1)
 	def _cmd_cursor_end(self):		self.ui._cursor_to_end(+1)
 	def _cmd_toggle_cursor(self):	self.ui.cursor_line.is_selected ^= 1
-	def _cmd_toggle_all(self):
-			self.selector.set_selected(lambda line: not line.is_selected)
-	def _cmd_select_all(self):
-			self.selector.set_selected(lambda line: True)
-	def _cmd_select_none(self):
-			self.selector.set_selected(lambda line: False)
+	def _cmd_toggle_all(self):		self.ui._select_all('^')
+	def _cmd_select_all(self):		self.ui._select_all(True)
+	def _cmd_select_none(self):		self.ui._select_all(False)
 
 #------------------------------------------------------------------------------
 def make_filter(pattern, invert):
