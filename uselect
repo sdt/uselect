@@ -214,38 +214,38 @@ class UI:
 		self.window.addstr(self.height-1, 0, status_left + gap + status_right)
 
 	def _update(self):
-		key = self.window.getch()
+		key = curses.keyname(self.window.getch())
 		line = self.cursor_line
 
-		if key == ord('\n'):
+		if key == '^J':
 			# If there are no selected lines, select this one
 			# (sounds wrong, but feels quite natural in practice)
 			if next(itertools.ifilter(lambda line: line.is_selected, self.selector.active_lines), None) == None:
 				line.is_selected = 1
 			self._exit_requested = 1
-		elif key == ord('q'):
+		elif key == 'q':
 			for line in self.selector.active_lines:
 				line.is_selected = 0
 			self._exit_requested = 1
-		elif key == ord('k'):
+		elif key == 'k':
 			self._move_cursor(-1)
-		elif key == ord('j'):
+		elif key == 'j':
 			self._move_cursor(+1)
-		elif key == ord('g'):
+		elif key == 'g':
 			self._cursor_to_end(-1)
-		elif key == ord('G'):
+		elif key == 'G':
 			self._cursor_to_end(+1)
-		elif key == 6: # ^f
+		elif key == '^F':
 			self._page_up_down(+1)
-		elif key == 2: # ^b
+		elif key == '^B':
 			self._page_up_down(-1)
-		elif key == ord(' '):
+		elif key == ' ':
 			line.is_selected ^= 1
-		elif key == ord('t'):
+		elif key == 't':
 			self.selector.set_selected(lambda line: not line.is_selected)
-		elif key == ord('a'):
+		elif key == 'a':
 			self.selector.set_selected(lambda line: True)
-		elif key == ord('A'):
+		elif key == 'A':
 			self.selector.set_selected(lambda line: False)
 		else:
 			return 0
