@@ -235,6 +235,10 @@ class UI:
 			self._cursor_to_end(-1)
 		elif key == ord('G'):
 			self._cursor_to_end(+1)
+		elif key == 6: # ^f
+			self._page_up_down(+1)
+		elif key == 2: # ^b
+			self._page_up_down(-1)
 		elif key == ord(' '):
 			line.is_selected ^= 1
 		elif key == ord('t'):
@@ -263,6 +267,22 @@ class UI:
 		new_cursor = self.selector.next_selectable(self.cursor_line, dirn)
 		if self._set_cursor(new_cursor) == None:
 			self._cursor_to_end(dirn)
+
+	def _page_up_down(self, dirn):
+		cursor = self.cursor_line
+		start_index = self.cursor_line.index_all
+
+		page_size = self.height - 1
+		while dirn * (cursor.index_all - start_index) < page_size:
+			new_cursor = self.selector.next_selectable(cursor, dirn)
+			if new_cursor == None:
+				break
+			cursor = new_cursor
+
+		if cursor == self.cursor_line:
+			self._cursor_to_end(dirn)
+		else:
+			self.cursor_line = cursor
 
 	def _cursor_to_end(self, dirn):
 		lines = self.selector
