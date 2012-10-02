@@ -128,6 +128,7 @@ class UI:
 	def __init__(self, selector, message):
 		self.selector = selector
 		self.message  = message
+		self.controller = Controller(self, selector)
 
 	def _init_curses(self, window):
 		self.window = window
@@ -215,40 +216,8 @@ class UI:
 
 	def _update(self):
 		key = curses.keyname(self.window.getch())
-		line = self.cursor_line
-
-		if key == '^J':
-			# If there are no selected lines, select this one
-			# (sounds wrong, but feels quite natural in practice)
-			if next(itertools.ifilter(lambda line: line.is_selected, self.selector.active_lines), None) == None:
-				line.is_selected = 1
-			self._exit_requested = 1
-		elif key == 'q':
-			for line in self.selector.active_lines:
-				line.is_selected = 0
-			self._exit_requested = 1
-		elif key == 'k':
-			self._move_cursor(-1)
-		elif key == 'j':
-			self._move_cursor(+1)
-		elif key == 'g':
-			self._cursor_to_end(-1)
-		elif key == 'G':
-			self._cursor_to_end(+1)
-		elif key == '^F':
-			self._page_up_down(+1)
-		elif key == '^B':
-			self._page_up_down(-1)
-		elif key == ' ':
-			line.is_selected ^= 1
-		elif key == 't':
-			self.selector.set_selected(lambda line: not line.is_selected)
-		elif key == 'a':
-			self.selector.set_selected(lambda line: True)
-		elif key == 'A':
-			self.selector.set_selected(lambda line: False)
-		else:
-			return 0
+		if not self.controller.update(key):
+			return False
 
 		cursor_index = self.cursor_line.index_all
 		if cursor_index < self.first_line:
@@ -256,7 +225,17 @@ class UI:
 		elif cursor_index >= self.first_line + self.height - 1:
 			self.first_line = cursor_index - self.height + 2
 
-		return 1
+		return True
+
+	def _exit(self, keep_selection):
+		# If there are no selected lines, select this one
+		# (sounds wrong, but feels quite natural in practice)
+		if keep_selection:
+			if next(itertools.ifilter(lambda line: line.is_selected, self.selector.active_lines), None) == None:
+				self.cursor_line.is_selected = 1
+		else:
+			self.selector.set_selected(lambda line: False)
+		self._exit_requested = 1
 
 	def _set_cursor(self, new_cursor):
 		if new_cursor != None:
@@ -321,6 +300,55 @@ class UI:
 
 	def _set_color(self, name):
 		self.window.attrset(self._color_table[name])
+
+#------------------------------------------------------------------------------
+class Controller:
+
+	cmd_table = {
+		'exit':				[ '^J' ],
+		'abort':			[ 'KEY_ESC', 'q' ],
+		'cursor_dn':		[ 'j', 'KEY_DOWN' ],
+		'cursor_up':		[ 'k', 'KEY_UP' ],
+		'cursor_pgdn':		[ '^F', '^D', 'KEY_NPAGE' ],
+		'cursor_pgup':		[ '^B', '^U', 'KEY_PPAGE' ],
+		'cursor_home':		[ 'g', 'KEY_HOME' ],
+		'cursor_end':		[ 'G', 'KEY_END' ],
+		'toggle_cursor':	[ ' ' ],
+		'toggle_all':		[ 't', '^' ],
+		'select_all':		[ 'a', '*' ],
+		'select_none':		[ 'A', '-' ],
+	}
+
+	def __init__(self, ui, selector):
+		self.ui = ui
+		self.selector = selector
+		self.key_table = { }
+		for cmd, keys in Controller.cmd_table.items():
+			for key in keys:
+				self.key_table[key] = getattr(self, '_cmd_' + cmd)
+
+	def update(self, keyname):
+		command = self.key_table.get(keyname)
+		if command == None:
+			return False
+		command()
+		return True
+
+	def _cmd_exit(self):			self.ui._exit(True)
+	def _cmd_abort(self):			self.ui._exit(False)
+	def _cmd_cursor_dn(self):		self.ui._move_cursor(+1)
+	def _cmd_cursor_up(self):		self.ui._move_cursor(-1)
+	def _cmd_cursor_pgdn(self):		self.ui._page_up_down(+1)
+	def _cmd_cursor_pgup(self):		self.ui._page_up_down(-1)
+	def _cmd_cursor_home(self):		self.ui._cursor_to_end(-1)
+	def _cmd_cursor_end(self):		self.ui._cursor_to_end(+1)
+	def _cmd_toggle_cursor(self):	self.ui.cursor_line.is_selected ^= 1
+	def _cmd_toggle_all(self):
+			self.selector.set_selected(lambda line: not line.is_selected)
+	def _cmd_select_all(self):
+			self.selector.set_selected(lambda line: True)
+	def _cmd_select_none(self):
+			self.selector.set_selected(lambda line: False)
 
 #------------------------------------------------------------------------------
 def make_filter(pattern, invert):
