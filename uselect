@@ -33,7 +33,7 @@ class Line:
 	def __init__(self, text):
 		self.text = text.rstrip('\n\r')
 		self.is_selected = False
-		self.index_active = -1
+		self.index_active = None
 		self.index_all = -1
 
 #------------------------------------------------------------------------------
@@ -175,7 +175,7 @@ class UI:
 		if line.is_selected:
 			color += 'selected'
 			prefix = '# '
-		elif line.index_active >= 0:
+		elif line.index_active is not None:
 			color += 'selectable'
 			prefix = '. '
 		else:
