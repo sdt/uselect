@@ -385,7 +385,7 @@ def get_opts():
 	)
 	parser.add_option('-s', '--select-regex', dest='select', default='.', help='select lines matching regex SELECT')
 	parser.add_option('-i', '--invert-selection', dest='invert', action='store_true', help='select lines NOT matching regex SELECT')
-	parser.add_option('-m', '--message', dest='message', default='uselect', help='message to display in status bar')
+	parser.add_option('-m', '--message', dest='message', default='uselect v' + __version__, help='message to display in status bar')
 	parser.add_option('-1', '--single',  action='store_true', help='single selection mode')
 	return parser.parse_args()
 
