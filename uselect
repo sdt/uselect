@@ -215,8 +215,12 @@ class UI:
 		self.window.addstr(self.height-1, 0, status_left + gap + status_right)
 
 	def _update(self):
-		key = curses.keyname(self.window.getch())
-		if not self.controller.update(key):
+		key = self.window.getch()
+		if key == curses.ERR:	# resize generates KEY_RESIZE & ERR events
+			return False
+		if key == curses.KEY_RESIZE:
+			return True
+		if not self.controller.update(curses.keyname(key)):
 			return False
 
 		cursor_index = self.cursor_line.index_all
