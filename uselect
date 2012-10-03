@@ -53,7 +53,7 @@ class Selector:
 
 	def next_selectable(self, line, dirn):
 		index = line.index_active + dirn
-		if index < 0 or index >= len(self.active_lines):
+		if index not in range(len(self.active_lines)):
 			return None
 		return self.active_lines[index]
 
@@ -393,11 +393,11 @@ def get_args():
 def main():
 	args = get_args()
 	line_filter = make_filter(args.select, args.invert)
-	if len(args.item) > 0:
+	if args.item:
 		selector = Selector(line_filter, args.item)
 	else:
 		selector = Selector(line_filter, sys.stdin)
-	if len(selector.active_lines) == 0:
+	if not selector.active_lines:
 		print >> sys.stderr, 'No selectable lines'
 		sys.exit(1)
 	ui = UI(selector, args.message, args.single)
