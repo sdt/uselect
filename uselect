@@ -57,10 +57,6 @@ class Selector:
 			return None
 		return self.active_lines[index]
 
-	def set_selected(self, is_selected):
-		for line in self.active_lines:
-			line.is_selected = is_selected(line)
-
 	def lines_selected(self):
 		count = 0
 		for line in self.active_lines:
@@ -238,17 +234,12 @@ class UI:
 			if next(itertools.ifilter(lambda line: line.is_selected, self.selector.active_lines), None) == None:
 				self.cursor_line.is_selected = True
 		else:
-			self.selector.set_selected(lambda line: False)
+			self._select_all(lambda line: False)
 		self._exit_requested = True
 
-	def _select_all(self, state):
-		if state == '^':
-			func = lambda line: not line.is_selected
-		elif isinstance(state, Line):
-			func = lambda line: line == state
-		else:
-			func = lambda line: state
-		self.selector.set_selected(func)
+	def _select_all(self, predicate):
+		for line in self.selector.active_lines:
+			line.is_selected = predicate(line)
 
 	def _set_cursor(self, new_cursor):
 		if new_cursor != None:
@@ -369,10 +360,10 @@ class Controller:
 	def _cmd_cursor_home(self):		self.ui._cursor_to_end(-1)
 	def _cmd_cursor_end(self):		self.ui._cursor_to_end(+1)
 	def _cmd_toggle_cursor(self):	self.ui.cursor_line.is_selected ^= 1
-	def _cmd_toggle_all(self):		self.ui._select_all('^')
-	def _cmd_select_all(self):		self.ui._select_all(True)
-	def _cmd_select_none(self):		self.ui._select_all(False)
-	def _cmd_select_here(self):		self.ui._select_all(self.ui.cursor_line)
+	def _cmd_toggle_all(self): 		self.ui._select_all(lambda line: line.is_selected ^ 1)
+	def _cmd_select_all(self):		self.ui._select_all(lambda line: True)
+	def _cmd_select_none(self):		self.ui._select_all(lambda line: False)
+	def _cmd_select_here(self):		self.ui._select_all(lambda line: line == self.ui.cursor_line)
 
 #------------------------------------------------------------------------------
 def make_filter(pattern, invert):
