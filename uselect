@@ -182,7 +182,7 @@ class UI:
 			color += 'unselectable'
 			prefix = '  '
 		self._set_color(color)
-		text = prefix + line.text
+		text = (prefix + line.text)[:self.width];
 		if is_cursor:
 			text += ' ' * (self.width - len(text))
 		self.window.addstr(y, 0, text)
