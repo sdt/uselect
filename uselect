@@ -1,8 +1,8 @@
 #!/usr/bin/env python2.7
 
-import argparse
 import curses
 import itertools
+import optparse
 import os
 import re
 import sys
@@ -373,34 +373,33 @@ def make_filter(pattern, invert):
 	else:
 		return lambda line: line != '' and regex.search(line) != None
 
-def get_args():
-	parser = argparse.ArgumentParser(
-		description='''
-			uselect is an interactive line filter intended for use in pipelines.
-			Input lines are read from the command-line or stdin, and displayed
-			to the user. Selected input lines are written to stdout.
-		''',
+def get_opts():
+	parser = optparse.OptionParser(
+		usage='uselect [-1] [-s regex] [-i] [-m message] [items]',
+		version='%prog ' + __version__,
+		description=
+	"uselect is an interactive line filter intended for use in pipelines.\n"
+	"Input lines are read from the command-line or stdin, and displayed\n"
+	"to the user. Selected input lines are written to stdout.\n",
 		epilog='https://github.com/sdt/uselect',
 	)
-	parser.add_argument('-s', '--select-regex', dest='select', default='.', help='select lines matching regex SELECT')
-	parser.add_argument('-i', '--invert-selection', dest='invert', action='store_true', help='select lines NOT matching regex SELECT')
-	parser.add_argument('-m', '--message', dest='message', default='uselect', help='message to display in status bar')
-	parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__)
-	parser.add_argument('-1', '--single',  action='store_true', help='single selection mode')
-	parser.add_argument('item', nargs='*', help='read items from command-line rather than stdin')
+	parser.add_option('-s', '--select-regex', dest='select', default='.', help='select lines matching regex SELECT')
+	parser.add_option('-i', '--invert-selection', dest='invert', action='store_true', help='select lines NOT matching regex SELECT')
+	parser.add_option('-m', '--message', dest='message', default='uselect', help='message to display in status bar')
+	parser.add_option('-1', '--single',  action='store_true', help='single selection mode')
 	return parser.parse_args()
 
 def main():
-	args = get_args()
-	line_filter = make_filter(args.select, args.invert)
-	if args.item:
-		selector = Selector(line_filter, args.item)
+	opt, args = get_opts()
+	line_filter = make_filter(opt.select, opt.invert)
+	if args:
+		selector = Selector(line_filter, args)
 	else:
 		selector = Selector(line_filter, sys.stdin)
 	if not selector.active_lines:
 		print >> sys.stderr, 'No selectable lines'
 		sys.exit(1)
-	ui = UI(selector, args.message, args.single)
+	ui = UI(selector, opt.message, opt.single)
 	ui.run()
 	selector.print_lines()
 
