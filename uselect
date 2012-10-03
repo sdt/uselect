@@ -128,23 +128,13 @@ class UI:
 
 	def _init_curses(self, window):
 		self.window = window
-		curses.cbreak()
-		curses.noecho()
-		curses.start_color()
 		curses.use_default_colors()
-		window.keypad(1)
-		window.scrollok(0)
 		self._update_size()
 		self._exit_requested = False
 		self._next_color_pair = 1
 		self._color_table = {}
 		for k,v in UI.colors.iteritems():
 			self._color_table[k] = self._parse_color(v)
-
-	# Is this necessary in the presence of curses.wrapper?
-	def _deinit_curses(self):
-		curses.nocbreak()
-		curses.endwin()
 
 	def run(self):
 		console = Console()
@@ -162,9 +152,6 @@ class UI:
 
 			# Update
 			need_redraw = self._update()
-
-		# Teardown
-		self._deinit_curses()
 
 	def _draw(self):
 		self._update_size()
