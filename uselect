@@ -125,10 +125,10 @@ class UI:
 		'status': 'base1,base02',
 	}
 
-	def __init__(self, selector, message):
+	def __init__(self, selector, message, single_mode):
 		self.selector = selector
 		self.message  = message
-		self.controller = Controller(self)
+		self.controller = Controller(self, single_mode)
 
 	def _init_curses(self, window):
 		self.window = window
@@ -244,6 +244,8 @@ class UI:
 	def _select_all(self, state):
 		if state == '^':
 			func = lambda line: not line.is_selected
+		elif isinstance(state, Line):
+			func = lambda line: line == state
 		else:
 			func = lambda line: state
 		self.selector.set_selected(func)
@@ -315,7 +317,7 @@ class UI:
 #------------------------------------------------------------------------------
 class Controller:
 
-	cmd_table = {
+	cmd_table_common = {
 		'exit':				[ '^J' ],
 		'abort':			[ 'KEY_ESC', 'q' ],
 		'cursor_dn':		[ 'j', 'KEY_DOWN' ],
@@ -324,16 +326,30 @@ class Controller:
 		'cursor_pgup':		[ '^B', '^U', 'KEY_PPAGE' ],
 		'cursor_home':		[ 'g', 'KEY_HOME' ],
 		'cursor_end':		[ 'G', 'KEY_END' ],
+	}
+
+	cmd_table_single = {
+		'select_here':		[ ' ' ],
+	}
+
+	cmd_table_multi = {
 		'toggle_cursor':	[ ' ' ],
 		'toggle_all':		[ 't', '^' ],
 		'select_all':		[ 'a', '*' ],
 		'select_none':		[ 'A', '-' ],
 	}
 
-	def __init__(self, ui):
+	def __init__(self, ui, single_mode):
 		self.ui = ui
 		self.key_table = { }
-		for cmd, keys in Controller.cmd_table.items():
+		self.add_commands(Controller.cmd_table_common)
+		if single_mode:
+			self.add_commands(Controller.cmd_table_single)
+		else:
+			self.add_commands(Controller.cmd_table_multi)
+
+	def add_commands(self, table):
+		for cmd, keys in table.items():
 			for key in keys:
 				self.key_table[key] = getattr(self, '_cmd_' + cmd)
 
@@ -356,6 +372,7 @@ class Controller:
 	def _cmd_toggle_all(self):		self.ui._select_all('^')
 	def _cmd_select_all(self):		self.ui._select_all(True)
 	def _cmd_select_none(self):		self.ui._select_all(False)
+	def _cmd_select_here(self):		self.ui._select_all(self.ui.cursor_line)
 
 #------------------------------------------------------------------------------
 def make_filter(pattern, invert):
@@ -378,6 +395,7 @@ def get_args():
 	parser.add_argument('-i', '--invert-selection', dest='invert', action='store_true', help='select lines NOT matching regex SELECT')
 	parser.add_argument('-m', '--message', dest='message', default='uselect', help='message to display in status bar')
 	parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__)
+	parser.add_argument('-1', '--single',  action='store_true', help='single selection mode')
 	parser.add_argument('item', nargs='*', help='read items from command-line rather than stdin')
 	return parser.parse_args()
 
@@ -391,7 +409,7 @@ def main():
 	if len(selector.active_lines) == 0:
 		print >> sys.stderr, 'No selectable lines'
 		sys.exit(1)
-	ui = UI(selector, args.message)
+	ui = UI(selector, args.message, args.single)
 	ui.run()
 	selector.print_lines()
 

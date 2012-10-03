@@ -1,4 +1,4 @@
-usage: uselect [-h] [-s SELECT] [-i] [-m MESSAGE] [-v] [item [item ...]]
+usage: uselect [-h] [-s SELECT] [-i] [-m MESSAGE] [-v] [-1] [item [item ...]]
 
 uselect is an interactive line filter intended for use in pipelines. Input
 lines are read from the command-line or stdin, and displayed to the user.
@@ -16,5 +16,6 @@ optional arguments:
   -m MESSAGE, --message MESSAGE
                         message to display in status bar
   -v, --version         show program's version number and exit
+  -1, --single          single selection mode
 
 https://github.com/sdt/uselect
