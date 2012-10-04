@@ -121,9 +121,9 @@ class UI:
 		'status': 'base1,base02',
 	}
 
-	def __init__(self, selector, message, single_mode):
+	def __init__(self, selector, status_text, single_mode):
 		self.selector = selector
-		self.message  = message
+		self.status_text = status_text
 		self.controller = Controller(self, single_mode)
 
 	def _init_curses(self, window):
@@ -189,7 +189,7 @@ class UI:
 
 	def _draw_status(self):
 		status_left = '%d of %d, %d selected' % ( self.cursor_line.index_active + 1, len(self.selector.active_lines), self.selector.lines_selected() )
-		status_right = self.message
+		status_right = self.status_text
 
 		# Can't draw the bottom/right corner of the window
 		gap = ' ' * (self.width - len(status_left) - len(status_right) - 1)
@@ -362,7 +362,7 @@ def make_filter(pattern, invert):
 
 def get_opts():
 	parser = optparse.OptionParser(
-		usage='uselect [-1] [-s regex] [-i] [-m message] [items]',
+		usage='uselect [-1] [-m regex] [-i] [-s status-text] [items]',
 		version='%prog ' + __version__,
 		description=
 	"uselect is an interactive line filter intended for use in pipelines.\n"
@@ -370,15 +370,15 @@ def get_opts():
 	"to the user. Selected input lines are written to stdout.\n",
 		epilog='https://github.com/sdt/uselect',
 	)
-	parser.add_option('-s', '--select-regex', dest='select', default='.', help='select lines matching regex SELECT')
-	parser.add_option('-i', '--invert-selection', dest='invert', action='store_true', help='select lines NOT matching regex SELECT')
-	parser.add_option('-m', '--message', dest='message', default='uselect v' + __version__, help='message to display in status bar')
+	parser.add_option('-m', '--match-regex', dest='regex', default='.', help='only lines matching REGEX are selectable')
+	parser.add_option('-i', '--invert-match', dest='invert', action='store_true', help='only lines NOT matching -m REGEX are selectable')
+	parser.add_option('-s', '--status-text', dest='status_text', default='uselect v' + __version__, help='text to display in status bar')
 	parser.add_option('-1', '--single',  action='store_true', help='single selection mode')
 	return parser.parse_args()
 
 def main():
 	opt, args = get_opts()
-	line_filter = make_filter(opt.select, opt.invert)
+	line_filter = make_filter(opt.regex, opt.invert)
 	if args:
 		selector = Selector(line_filter, args)
 	else:
@@ -386,7 +386,7 @@ def main():
 	if not selector.active_lines:
 		print >> sys.stderr, 'No selectable lines'
 		sys.exit(1)
-	ui = UI(selector, opt.message, opt.single)
+	ui = UI(selector, opt.status_text, opt.single)
 	ui.run()
 	selector.print_lines()
 
