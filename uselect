@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.6
+#!/usr/bin/env python
 
 import curses
 import itertools
@@ -392,6 +392,9 @@ def main():
 
 #------------------------------------------------------------------------------
 if __name__ == "__main__":
+	if sys.hexversion < 0x02050000:
+		print >> sys.stderr, "Python 2.5 or later required"
+		sys.exit(2)
 	try:
 		main()
 	except KeyboardInterrupt:
