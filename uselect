@@ -255,7 +255,6 @@ class UI:
 			self.cursor_line = cursor
 
 	def _cursor_to_end(self, dirn):
-		lines = self.selector
 		if dirn < 0:
 			self._set_cursor(self.selector.active_lines[0])
 			self._first_line = 0
