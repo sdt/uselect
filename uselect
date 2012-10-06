@@ -381,7 +381,7 @@ def main():
 	if args:
 		selector = Selector(line_filter, args)
 	else:
-		selector = Selector(line_filter, sys.stdin)
+		selector = Selector(line_filter, sys.stdin.readlines())
 	if not selector.active_lines:
 		print >> sys.stderr, 'No selectable lines'
 		sys.exit(1)
