@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import curses
+import curses.ascii
 import itertools
 import optparse
 import os
@@ -125,6 +126,7 @@ class UI:
 		self.selector = selector
 		self.status_text = status_text
 		self.controller = Controller(self, single_mode)
+		self.searcher = Searcher()
 
 	def _init_curses(self, window):
 		self.window = window
@@ -188,7 +190,12 @@ class UI:
 		self.window.addstr(y, 0, text)
 
 	def _draw_status(self):
-		status_left = '%d of %d, %d selected' % ( self.cursor_line.index_active + 1, len(self.selector.active_lines), self.selector.lines_selected() )
+		searching = self.searcher.active()
+		search_prefix = 'search: '
+		if searching:
+			status_left = search_prefix + self.searcher.pattern
+		else:
+			status_left = '%d of %d, %d selected' % ( self.cursor_line.index_active + 1, len(self.selector.active_lines), self.selector.lines_selected() )
 		status_right = self.status_text
 
 		# Can't draw the bottom/right corner of the window
@@ -197,11 +204,34 @@ class UI:
 		self._set_color('status')
 		self.window.addstr(self.height-1, 0, status_left + gap + status_right)
 
+		if searching:
+			self.window.move(self.height-1,
+			                 self.searcher.cursor + len(search_prefix))
+
+	def _search_next(self, include_current_line):
+		if self.searcher.pattern == '':
+			return
+		regex = re.compile(self.searcher.pattern)
+		if include_current_line and regex.search(self.cursor_line.text) != None:
+			return
+		start = self.cursor_line.index_active
+		curs  = (start + 1) % len(self.selector.active_lines)
+		while curs != start:
+			line = self.selector.active_lines[curs]
+			if regex.search(line.text) != None:
+				self.cursor_line = line
+				return
+			curs = (curs + 1) % len(self.selector.active_lines)
+
 	def _update(self):
 		key = self.window.getch()
 		if key == curses.ERR:	# resize generates KEY_RESIZE & ERR events
 			return False
 		if key == curses.KEY_RESIZE:
+			return True
+		if self.searcher.active():
+			if self.searcher.update(key):
+				self._search_next(True)
 			return True
 		if not self.controller.update(curses.keyname(key)):
 			return False
@@ -291,18 +321,72 @@ class UI:
 	def _set_color(self, name):
 		self.window.attrset(self._color_table[name])
 
+	def _enter_search_mode(self):
+		self.searcher.activate()
+
+#------------------------------------------------------------------------------
+class Searcher:
+
+	def __init__(self):
+		self.is_active = False
+		self.pattern = ''
+		self.cursor = 0
+
+	def update(self, key):
+		pat = self.pattern
+		cur = self.cursor
+		keyname = curses.keyname(key)
+		if keyname == '^J':
+			self.is_active = False
+			return True	# exit search mode and do a search
+		elif keyname == '^[': # escape
+			# maybe clear search string, then abort
+			self.is_active = False
+			return False # exit search mode and don't search
+		elif keyname == 'KEY_LEFT':
+			self.cursor = max(cur - 1, 0)
+		elif keyname == 'KEY_RIGHT':
+			self.cursor = min(cur + 1, len(pat))
+		elif keyname == 'KEY_DC':
+			if len(pat) > 0:
+				self.pattern = pat[:cur] + pat[cur+1:]
+		elif keyname == 'KEY_BACKSPACE' or keyname == '^?':
+			if cur > 0:
+				self.cursor = cur - 1
+				self.pattern = pat[:cur-1] + pat[cur:]
+		elif curses.ascii.isgraph(key) or keyname == ' ':
+			self.pattern = pat[:cur] + keyname + pat[cur:]
+			self.cursor = cur + 1
+		else:
+			self.pattern = pat[:cur] + keyname + pat[cur:]
+			self.cursor = cur + len(keyname)
+
+		return False
+
+	def activate(self):
+		self.is_active = True
+		self.cursor = len(self.pattern)
+
+	def active(self):
+		return self.is_active
+
+	def pattern(self):
+		return self.pattern
+
 #------------------------------------------------------------------------------
 class Controller:
 
 	cmd_table_common = {
 		'exit':				[ '^J' ],
-		'abort':			[ 'KEY_ESC', 'q' ],
+		'abort':			[ '^[', 'q' ],
 		'cursor_dn':		[ 'j', 'KEY_DOWN' ],
 		'cursor_up':		[ 'k', 'KEY_UP' ],
 		'cursor_pgdn':		[ '^F', '^D', 'KEY_NPAGE' ],
 		'cursor_pgup':		[ '^B', '^U', 'KEY_PPAGE' ],
 		'cursor_home':		[ 'g', 'KEY_HOME' ],
 		'cursor_end':		[ 'G', 'KEY_END' ],
+		'begin_search':		[ '/', '^S' ],
+		'search_next':		[ 'n' ],
 	}
 
 	cmd_table_single = {
@@ -350,6 +434,8 @@ class Controller:
 	def _cmd_select_all(self):		self.ui._select_all(lambda line: True)
 	def _cmd_select_none(self):		self.ui._select_all(lambda line: False)
 	def _cmd_select_here(self):		self.ui._select_all(lambda line: line == self.ui.cursor_line)
+	def _cmd_begin_search(self):	self.ui._enter_search_mode()
+	def _cmd_search_next(self):		self.ui._search_next(False)
 
 #------------------------------------------------------------------------------
 def make_filter(pattern, invert):
