@@ -169,6 +169,12 @@ class UI:
 		self._draw_status()
 		self.window.refresh()
 
+	def _addstr(self, y, x, text):
+		try:
+			self.window.addstr(y, x, text)
+		except curses.error, e:
+			raise Exception('addstr(y=%d, x=%d, t="%s"): %s' % (y, x, text, e))
+
 	def _draw_line(self, y, line):
 		color = 'cursor_'
 		is_cursor = (line == self.cursor_line)
@@ -187,7 +193,7 @@ class UI:
 		text = (prefix + line.text)[:self.width];
 		if is_cursor:
 			text += ' ' * (self.width - len(text))
-		self.window.addstr(y, 0, text)
+		self._addstr(y, 0, text)
 
 	def _draw_status(self):
 		searching = self.searcher.active()
@@ -202,7 +208,7 @@ class UI:
 		gap = ' ' * (self.width - len(status_left) - len(status_right) - 1)
 
 		self._set_color('status')
-		self.window.addstr(self.height-1, 0, status_left + gap + status_right)
+		self._addstr(self.height-1, 0, status_left + gap + status_right)
 
 		if searching:
 			self.window.move(self.height-1,
