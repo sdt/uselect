@@ -336,6 +336,7 @@ class Searcher:
 		self.is_active = False
 		self.pattern = ''
 		self.cursor = 0
+		self.history = []
 
 	def update(self, key):
 		pat = self.pattern
@@ -343,15 +344,26 @@ class Searcher:
 		keyname = curses.keyname(key)
 		if keyname == '^J':
 			self.is_active = False
-			return True	# exit search mode and do a search
+			self.history = [ x for x in self.history if x != self.pattern ]
+			self.history.insert(0, self.pattern)
+			return True	# exit search mode and perform a search
 		elif keyname == '^[': # escape
-			# maybe clear search string, then abort
 			self.is_active = False
 			return False # exit search mode and don't search
 		elif keyname == 'KEY_LEFT':
 			self.cursor = max(cur - 1, 0)
 		elif keyname == 'KEY_RIGHT':
 			self.cursor = min(cur + 1, len(pat))
+		elif keyname == 'KEY_UP':
+			if self.history:
+				self.pattern = self.history.pop(0)
+				self.history.append(self.pattern)
+				self.cursor = len(self.pattern)
+		elif keyname == 'KEY_DOWN':
+			if self.history:
+				self.pattern = self.history.pop(-1)
+				self.history.insert(0, self.pattern)
+				self.cursor = len(self.pattern)
 		elif keyname == 'KEY_DC':
 			if len(pat) > 0:
 				self.pattern = pat[:cur] + pat[cur+1:]
