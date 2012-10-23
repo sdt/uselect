@@ -371,7 +371,8 @@ class Searcher:
 
 	def activate(self):
 		self.is_active = True
-		self.cursor = len(self.pattern)
+		self.pattern = ''
+		self.cursor = 0
 
 	def active(self):
 		return self.is_active
