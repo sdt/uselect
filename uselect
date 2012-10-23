@@ -362,7 +362,7 @@ class Searcher:
 		elif curses.ascii.isgraph(key) or keyname == ' ':
 			self.pattern = pat[:cur] + keyname + pat[cur:]
 			self.cursor = cur + 1
-		else:
+		elif os.environ.get('USELECT_DEBUG', None):
 			self.pattern = pat[:cur] + keyname + pat[cur:]
 			self.cursor = cur + len(keyname)
 
