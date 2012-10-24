@@ -20,7 +20,7 @@ le() {
 
 
 #------------------------------------------------------------------------------
-# Misc functions: fx ugit
+# Misc functions: fx hx ugit
 
 # aptinfo <aptitude-search-pattern>
 # * combined aptitude search and aptitude show
@@ -38,6 +38,17 @@ fx() {
     # "${!#}"              == $ARGV[n-1]
     # "${@:1:$(($# - 1))}" == $ARGV[0..n-2]
     "${@:1:$(($# - 1))}" $( ff "${!#}" | uselect -s "$*" );
+}
+
+# hx [fgrep-args] - history search and execute
+# * select a command from your history and execute it
+# * optionally specify fgrep args to narrow the list
+# * eg. hx mount
+# * eg. hx -i nocase
+hx ()
+{
+    local cmd=$( fc -l -1 1 | fgrep "${@:- }" | uselect -1 | awk '{print $1}' )
+    [[ -n "$cmd" ]] && fc -s $cmd
 }
 
 # ugit <command> [options]
