@@ -359,6 +359,7 @@ class Searcher:
 			self.history.insert(0, self.pattern)
 			ret = True	# exit search mode and perform a search
 		elif keyname == '^[': # escape
+			self.pattern = ''
 			self.is_active = False # exit search mode and don't search
 		elif keyname == 'KEY_LEFT':
 			self.cursor = max(cur - 1, 0)
