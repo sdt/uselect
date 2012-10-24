@@ -215,9 +215,9 @@ class UI:
 			                 self.searcher.cursor + len(search_prefix))
 
 	def _search_next(self, include_current_line):
-		if self.searcher.pattern == '':
+		regex = self.searcher.regex
+		if regex == None:
 			return
-		regex = re.compile(self.searcher.pattern)
 		if include_current_line and regex.search(self.cursor_line.text) != None:
 			return
 		start = self.cursor_line.index_active
@@ -337,19 +337,20 @@ class Searcher:
 		self.pattern = ''
 		self.cursor = 0
 		self.history = []
+		self.regex = None
 
 	def update(self, key):
 		pat = self.pattern
 		cur = self.cursor
+		ret = False
 		keyname = curses.keyname(key)
 		if keyname == '^J':
 			self.is_active = False
 			self.history = [ x for x in self.history if x != self.pattern ]
 			self.history.insert(0, self.pattern)
-			return True	# exit search mode and perform a search
+			ret = True	# exit search mode and perform a search
 		elif keyname == '^[': # escape
-			self.is_active = False
-			return False # exit search mode and don't search
+			self.is_active = False # exit search mode and don't search
 		elif keyname == 'KEY_LEFT':
 			self.cursor = max(cur - 1, 0)
 		elif keyname == 'KEY_RIGHT':
@@ -378,7 +379,14 @@ class Searcher:
 			self.pattern = pat[:cur] + keyname + pat[cur:]
 			self.cursor = cur + len(keyname)
 
-		return False
+		self.regex = None;
+		if self.pattern != '':
+			try:
+				self.regex = re.compile(self.pattern)
+			except re.error, e:
+				pass # maybe store error message
+
+		return ret
 
 	def activate(self):
 		self.is_active = True
