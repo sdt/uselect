@@ -117,9 +117,11 @@ class UI:
 		'cursor_selected': 'green,base02',
 		'cursor_selectable': 'base1,base02',
 		'cursor_unselectable': 'base1,base02',
+		'cursor_search_hit': 'cyan,base02',
 		'nocursor_selected': 'green',
 		'nocursor_selectable': 'base0',
 		'nocursor_unselectable': 'base01',
+		'nocursor_search_hit': 'cyan',
 		'status': 'base1,base02',
 	}
 
@@ -191,6 +193,16 @@ class UI:
 		if is_cursor:
 			text += ' ' * (self.width - len(text))
 		self._addstr(y, 0, text)
+		if self.searcher.regex is not None:
+			self._set_color(color0 + '_search_hit')
+			inset = len(prefix)
+			max_x = self.width - inset
+			for match in self.searcher.regex.finditer(line.text):
+				x0, x1 = match.span()
+				if x0 >= max_x:
+					break
+				x1 = min(x1, max_x)
+				self._addstr(y, x0 + inset, line.text[x0:x1])
 
 	def _draw_status(self):
 		searching = self.searcher.active()
