@@ -163,10 +163,7 @@ class UI:
 		lines = self.selector.all_lines
 		line_count = min(self.height - 1, len(lines) - self.first_line)
 		for y in range(0, min(line_count, self.height)):
-			line_no = y + self.first_line
-			if line_no != self.cursor_line.index_all:
-				self._draw_line(y, lines[line_no])
-		self._draw_line(self.cursor_line.index_all - self.first_line, self.cursor_line)
+			self._draw_line(y, lines[y + self.first_line])
 		self._draw_status()
 		self.window.refresh()
 
@@ -177,20 +174,19 @@ class UI:
 			raise Exception('addstr(y=%d, x=%d, t="%s"): %s' % (y, x, text, e))
 
 	def _draw_line(self, y, line):
-		color = 'cursor_'
+		color0 = 'cursor'
+		color1 = 'unselectable'
+		prefix = '  '
 		is_cursor = (line == self.cursor_line)
 		if not is_cursor:
-			color = 'no' + color
+			color0 = 'nocursor'
 		if line.is_selected:
-			color += 'selected'
+			color1 = 'selected'
 			prefix = '# '
 		elif line.index_active is not None:
-			color += 'selectable'
+			color1 = 'selectable'
 			prefix = '. '
-		else:
-			color += 'unselectable'
-			prefix = '  '
-		self._set_color(color)
+		self._set_color(color0 + '_' + color1)
 		text = (prefix + line.text)[:self.width];
 		if is_cursor:
 			text += ' ' * (self.width - len(text))
