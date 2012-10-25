@@ -223,20 +223,20 @@ class UI:
 			self.window.move(self.height-1,
 			                 self.searcher.cursor + len(search_prefix))
 
-	def _search_next(self, include_current_line):
+	def _search_next(self, dirn, include_current_line):
 		regex = self.searcher.regex
 		if regex == None:
 			return
 		if include_current_line and regex.search(self.cursor_line.text) != None:
 			return
 		start = self.cursor_line.index_active
-		curs  = (start + 1) % len(self.selector.active_lines)
+		curs  = (start + dirn) % len(self.selector.active_lines)
 		while curs != start:
 			line = self.selector.active_lines[curs]
 			if regex.search(line.text) != None:
 				self.cursor_line = line
 				return
-			curs = (curs + 1) % len(self.selector.active_lines)
+			curs = (curs + dirn) % len(self.selector.active_lines)
 
 	def _update(self):
 		key = self.window.getch()
@@ -246,7 +246,7 @@ class UI:
 			return True
 		elif self.searcher.active():
 			if self.searcher.update(key):
-				self._search_next(True)
+				self._search_next(1, True)
 		elif not self.controller.update(curses.keyname(key)):
 			return False
 
@@ -423,6 +423,7 @@ class Controller:
 		'cursor_end':		[ 'G', 'KEY_END' ],
 		'begin_search':		[ '/', '^S' ],
 		'search_next':		[ 'n' ],
+		'search_prev':		[ 'N' ],
 	}
 
 	cmd_table_single = {
@@ -471,7 +472,8 @@ class Controller:
 	def _cmd_select_none(self):		self.ui._select_all(lambda line: False)
 	def _cmd_select_here(self):		self.ui._select_all(lambda line: line == self.ui.cursor_line)
 	def _cmd_begin_search(self):	self.ui._enter_search_mode()
-	def _cmd_search_next(self):		self.ui._search_next(False)
+	def _cmd_search_next(self):		self.ui._search_next(+1, False)
+	def _cmd_search_prev(self):		self.ui._search_next(-1, False)
 
 #------------------------------------------------------------------------------
 def make_filter(pattern, invert):
