@@ -47,7 +47,7 @@ fx() {
 # * eg. hx -i nocase
 hx ()
 {
-    local cmd=$( fc -l -1 1 | fgrep "${@:- }" | uselect -1 | awk '{print $1}' )
+    local cmd=$( history | reverse | fgrep "${@:- }" | uselect -1 | awk '{print $1}' )
     [[ -n "$cmd" ]] && fc -s $cmd
 }
 
@@ -68,6 +68,13 @@ ugit() {
 
 #------------------------------------------------------------------------------
 # Support functions
+
+# reverse() - reverses the stream, first to last
+if type -t tac > /dev/null; then
+	reverse() { tac; }
+else
+	reverse() { tail -r; }
+fi
 
 # uedit [files] - basic $EDITOR wrapper
 # * echoes file arguments to stderr
@@ -102,6 +109,5 @@ ixargs() {
 # ff [fgrep-pattern] - list files matching pattern
 # * pattern is simple string match against the relative path
 ff() {
-    ack -a -f | fgrep "$@" ;
+    ack -a -f | fgrep "${@:- }" ;
 }
-
