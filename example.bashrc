@@ -35,10 +35,22 @@ aptinfo() {
 # * eg. fx tar -czvf source.tar.gz .c
 # * use '' as the search term to match everything
 fx() {
-    # "${!#}"              == $ARGV[n-1]
-    # "${@:1:$(($# - 1))}" == $ARGV[0..n-2]
-    "${@:1:$(($# - 1))}" $( ff "${!#}" | uselect -s "$*" );
+    # eg. fx $command-and-args $ff-search-term
+    local cmd="${@:1:$(($# - 1))}"      # ARGV[0 .. N-2]
+    local pat="${!#}"                   # ARGV[N-1]
+
+    # This whole hoo-har is so we split on newlines and not spaces, so that
+    # if we get [ 'file1', 'file 2' ] from uselect, then the files array
+    # contains two elements, not three.
+    local _IFS="$IFS"
+    local out=$( ff "$pat" | uselect -s "$*" )
+    IFS=$'\n'
+    local files=( $out )
+    IFS="$_IFS"
+
+    runv $cmd "${files[@]}"
 }
+
 
 # hx [fgrep-args] - history search and execute
 # * select a command from your history and execute it
@@ -71,9 +83,9 @@ ugit() {
 
 # reverse() - reverses the stream, first to last
 if type -t tac > /dev/null; then
-	reverse() { tac; }
+    reverse() { tac; }
 else
-	reverse() { tail -r; }
+    reverse() { tail -r; }
 fi
 
 # uedit [files] - basic $EDITOR wrapper
@@ -81,8 +93,7 @@ fi
 # * exits if there are no filenames
 uedit() {
     if [ $# -gt 0 ]; then
-        echo $EDITOR $@ 1>&2
-        $EDITOR "$@"
+        runv ${UEDITOR:-EDITOR} "$@"
     fi
 }
 
@@ -91,23 +102,39 @@ uedit() {
 # * basic usage only, no xargs options are supported
 ixargs() {
     # Read args from stdin into the $args array
+    local _IFS="$IFS"
     IFS=$'\n';
     set -f ;
     trap 'echo Aborted...' INT
     local args=( $( cat ) )   # read args from stdin
     trap INT
     set +f ;
-    IFS=$' \t\n'
+    IFS="$_IFS"
 
     # Reopen stdin to /dev/tty so that interactive programs work properly
     exec 0</dev/tty
 
     # Run specified command with the args from stdin
-    [ -n "$files" ] && "$@" "${args[@]}"
+    [ -n "$files" ] && runv "$@" "${args[@]}"
 }
 
 # ff [fgrep-pattern] - list files matching pattern
 # * pattern is simple string match against the relative path
 ff() {
     ack -a -f | fgrep "${@:- }" ;
+}
+
+# echoq [args]
+# Echo-quoted - shell-escapes the arguments before printing, so that they
+# can be copied and pasted back into the shell.
+echoq() {
+    printf '%q ' "$@"
+    printf "\n"
+}
+
+# runv [command-line] - run verbosely
+# Echo the command to stderr with quoting, and then run it
+runv() {
+    echoq "$@" 1>&2
+    "$@"
 }
