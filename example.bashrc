@@ -115,7 +115,7 @@ ixargs() {
     exec 0</dev/tty
 
     # Run specified command with the args from stdin
-    [ -n "$files" ] && runv "$@" "${args[@]}"
+    [ -n "$args" ] && runv "$@" "${args[@]}"
 }
 
 # ff [fgrep-pattern] - list files matching pattern
