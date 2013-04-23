@@ -121,7 +121,7 @@ ixargs() {
 # ff [fgrep-pattern] - list files matching pattern
 # * pattern is simple string match against the relative path
 ff() {
-    ack -a -f | fgrep "${@:- }" ;
+    ack -f | fgrep "${@:- }" ;
 }
 
 # echoq [args]
