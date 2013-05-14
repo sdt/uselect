@@ -93,7 +93,7 @@ fi
 # * exits if there are no filenames
 uedit() {
     if [ $# -gt 0 ]; then
-        runv ${UEDITOR:-EDITOR} "$@"
+        runv ${UEDITOR:-$EDITOR} "$@"
     fi
 }
 
