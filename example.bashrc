@@ -59,7 +59,7 @@ fx() {
 # * eg. hx -i nocase
 hx ()
 {
-    local cmd=$( history | reverse | fgrep "${@:- }" | uselect -1 | awk '{print $1}' )
+    local cmd=$( history | reverse | fgrep "${@:- }" | tail -n +2 | uselect -1 | awk '{print $1}' )
     [[ -n "$cmd" ]] && fc -s $cmd
 }
 
