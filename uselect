@@ -503,7 +503,7 @@ def main():
 	opt, args = get_opts()
 	line_filter = make_filter(opt.regex, opt.invert)
 	if args:
-		selector = Selector(line_filter, args)
+		selector = Selector(line_filter, [ line + '\n' for line in args ] )
 	else:
 		selector = Selector(line_filter, sys.stdin.readlines())
 	if not selector.active_lines:
