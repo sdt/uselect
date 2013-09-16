@@ -25,7 +25,7 @@ le() {
 # aptinfo <aptitude-search-pattern>
 # * combined aptitude search and aptitude show
 aptinfo() {
-    aptitude search -F '%p %d %V %v' "$@" |\
+    aptitude search -w $( tput cols ) -F '%p %d %V %v' "$@" |\
         uselect -s 'Show package info' |\
         awk '{ print $1 }' |\
         xargs aptitude show
