@@ -10,7 +10,7 @@ fe() {
 
 # ge <ack-args> - grep files by content and edit (*G*rep and *E*dit)
 ge() {
-    uedit $( ack --heading --break "$@" | uselect -s "ge $*" -i -m '^\d+: ' )
+    uedit $( ack --heading --break "$@" | uselect -s "ge $*" -i -m '^\d+:' )
 }
 
 # le <locate-args> - locate files by name and edit (*L*ocate and *E*dit)
