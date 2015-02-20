@@ -20,15 +20,15 @@ le() {
 
 
 #------------------------------------------------------------------------------
-# Misc functions: fx hx ugit
+# Misc functions: aptinfo fx hx ugit
 
-# aptinfo <aptitude-search-pattern>
-# * combined aptitude search and aptitude show
+# aptinfo <apt-cache-search-pattern>
+# * combined apt-cache search and apt-cache show
 aptinfo() {
-    aptitude search -w $( tput cols ) -F '%p %d %V %v' "$@" |\
+    apt-cache search "$@" |\
         uselect -s 'Show package info' |\
         awk '{ print $1 }' |\
-        xargs aptitude show
+        xargs apt-cache show
 }
 
 # fx <command> [args] <ff-search-term> - find files and execute
