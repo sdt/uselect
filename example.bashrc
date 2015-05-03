@@ -26,6 +26,7 @@ le() {
 # * combined apt-cache search and apt-cache show
 aptinfo() {
     apt-cache search "$@" |\
+        sort |\
         uselect -s 'Show package info' |\
         awk '{ print $1 }' |\
         xargs apt-cache show
