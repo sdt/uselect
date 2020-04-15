@@ -1,7 +1,7 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 
 """
-Copyright (c) 2014, Stephen Thirlwall.
+Copyright (c) 2020, Stephen Thirlwall.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -24,6 +24,9 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
+from builtins import next
+from builtins import range
+from builtins import object
 
 import curses
 import curses.ascii
@@ -36,7 +39,7 @@ import sys
 __version__ = '0.1'
 
 #------------------------------------------------------------------------------
-class Console:
+class Console(object):
 	def __init__(self):
 		# Save the original stdin and stdout, and reopen them to /dev/tty,
 		# so that curses will work.
@@ -54,7 +57,7 @@ class Console:
 		os.dup2(self.stdout, 1)
 
 #------------------------------------------------------------------------------
-class Line:
+class Line(object):
 
 	def __init__(self, text):
 		self.original_text = text
@@ -64,7 +67,7 @@ class Line:
 		self.index_all = -1
 
 #------------------------------------------------------------------------------
-class Selector:
+class Selector(object):
 
 	def __init__(self, line_filter, infile):
 		self.x = 1
@@ -80,7 +83,7 @@ class Selector:
 
 	def next_selectable(self, line, dirn):
 		index = line.index_active + dirn
-		if index not in range(len(self.active_lines)):
+		if index not in list(range(len(self.active_lines))):
 			return None
 		return self.active_lines[index]
 
@@ -97,7 +100,7 @@ class Selector:
 				sys.stdout.write(line.original_text)
 
 #------------------------------------------------------------------------------
-class UI:
+class UI(object):
 
 	fg_bg_color = {
 		'black':     curses.COLOR_BLACK,
@@ -163,7 +166,7 @@ class UI:
 		self._exit_requested = False
 		self._next_color_pair = 1
 		self._color_table = {}
-		for k,v in UI.colors.iteritems():
+		for k,v in UI.colors.items():
 			self._color_table[k] = self._parse_color(v)
 
 	def run(self):
@@ -197,7 +200,7 @@ class UI:
 	def _addstr(self, y, x, text):
 		try:
 			self.window.addstr(y, x, text)
-		except curses.error, e:
+		except curses.error as e:
 			raise Exception('addstr(y=%d, x=%d, t="%s"): %s' % (y, x, text, e))
 
 	def _draw_line(self, y, line):
@@ -272,7 +275,7 @@ class UI:
 		elif self.searcher.active():
 			if self.searcher.update(key):
 				self._search_next(1, True)
-		elif not self.controller.update(curses.keyname(key)):
+		elif not self.controller.update(curses.keyname(key).decode('utf-8')):
 			return False
 
 		cursor_index = self.cursor_line.index_all
@@ -287,7 +290,7 @@ class UI:
 		# If there are no selected lines, select this one
 		# (sounds wrong, but feels quite natural in practice)
 		if keep_selection:
-			if next(itertools.ifilter(lambda line: line.is_selected, self.selector.active_lines), None) == None:
+			if next(filter(lambda line: line.is_selected, self.selector.active_lines), None) == None:
 				self.cursor_line.is_selected = True
 		else:
 			self._select_all(lambda line: False)
@@ -364,7 +367,7 @@ class UI:
 		self.searcher.activate()
 
 #------------------------------------------------------------------------------
-class Searcher:
+class Searcher(object):
 
 	def __init__(self):
 		self.is_active = False
@@ -377,7 +380,7 @@ class Searcher:
 		pat = self.pattern
 		cur = self.cursor
 		ret = False
-		keyname = curses.keyname(key)
+		keyname = curses.keyname(key).decode('utf-8')
 		if keyname == '^J':
 			self.is_active = False
 			self.history = [ x for x in self.history if x != self.pattern ]
@@ -418,7 +421,7 @@ class Searcher:
 		if self.pattern != '':
 			try:
 				self.regex = re.compile(self.pattern)
-			except re.error, e:
+			except re.error as e:
 				pass # maybe store error message
 
 		return ret
@@ -435,7 +438,7 @@ class Searcher:
 		return self.pattern
 
 #------------------------------------------------------------------------------
-class Controller:
+class Controller(object):
 
 	cmd_table_common = {
 		'exit':				[ '^J' ],
@@ -472,7 +475,7 @@ class Controller:
 			self.add_commands(Controller.cmd_table_multi)
 
 	def add_commands(self, table):
-		for cmd, keys in table.items():
+		for cmd, keys in list(table.items()):
 			for key in keys:
 				self.key_table[key] = getattr(self, '_cmd_' + cmd)
 
@@ -532,7 +535,7 @@ def main():
 	else:
 		selector = Selector(line_filter, sys.stdin.readlines())
 	if not selector.active_lines:
-		print >> sys.stderr, 'No selectable lines'
+		print('No selectable lines', file=sys.stderr)
 		sys.exit(1)
 	ui = UI(selector, opt.status_text, opt.single)
 	ui.run()
@@ -540,9 +543,6 @@ def main():
 
 #------------------------------------------------------------------------------
 if __name__ == "__main__":
-	if sys.hexversion < 0x02050000:
-		print >> sys.stderr, "Python 2.5 or later required"
-		sys.exit(2)
 	try:
 		main()
 	except KeyboardInterrupt:
