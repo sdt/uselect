@@ -1,5 +1,9 @@
 # Example bash functions for use with uselect
 
+has() {
+    type -t "$@" > /dev/null
+}
+
 #------------------------------------------------------------------------------
 # Editing functions: fe ge le
 
@@ -9,9 +13,19 @@ fe() {
 }
 
 # ge <ack-args> - grep files by content and edit (*G*rep and *E*dit)
-ge() {
-    uedit $( ack --heading --break "$@" | uselect -s "ge $*" -i -m '^\d+:' )
-}
+if has ag; then
+    ge() {
+        uedit $( ag --heading --break "$@" | uselect -s "ge $*" -i -m '^\d+:' )
+    }
+elif has ack; then
+    ge() {
+        uedit $( ack --heading --break "$@" | uselect -s "ge $*" -i -m '^\d+:' )
+    }
+else
+    ge() {
+        echo Please install ack or ag
+    }
+fi
 
 # le <locate-args> - locate files by name and edit (*L*ocate and *E*dit)
 le() {
@@ -120,9 +134,19 @@ ixargs() {
 
 # ff [fgrep-pattern] - list files matching pattern
 # * pattern is simple string match against the relative path
-ff() {
-    ack -f | fgrep "${@:- }" ;
-}
+if has ag; then
+    ff() {
+        ag -l | sort | fgrep "${@:- }" ;
+    }
+elif has ack; then
+    ff() {
+        ack -f | fgrep "${@:- }" ;
+    }
+else
+    ff() {
+        echo Please install ack or ag
+    }
+fi
 
 # echoq [args]
 # Echo-quoted - shell-escapes the arguments before printing, so that they
