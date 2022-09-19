@@ -15,7 +15,7 @@ fe() {
 # ge <ack-args> - grep files by content and edit (*G*rep and *E*dit)
 if has ag; then
     ge() {
-        uedit $( ag --heading --break "$@" | uselect -s "ge $*" -i -m '^\d+:' )
+        uedit $( ag --case-sensitive --heading --break "$@" | uselect -s "ge $*" -i -m '^\d+:' )
     }
 elif has ack; then
     ge() {
