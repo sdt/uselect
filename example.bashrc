@@ -9,17 +9,17 @@ has() {
 
 # fe <ff-args> - find files by name and edit (*F*ind and *E*dit)
 fe() {
-    uedit $( ff "$@" | uselect -s "fe $*" )
+    uedit "$( ff "$@" | uselect -s "fe $*" )"
 }
 
 # ge <ack-args> - grep files by content and edit (*G*rep and *E*dit)
 if has ag; then
     ge() {
-        uedit $( ag --case-sensitive --heading --break "$@" | uselect -s "ge $*" -i -m '^\d+:' )
+        uedit "$( ag --case-sensitive --heading --break "$@" | uselect -s "ge $*" -i -m '^\d+:' )"
     }
 elif has ack; then
     ge() {
-        uedit $( ack --heading --break "$@" | uselect -s "ge $*" -i -m '^\d+:' )
+        "uedit $( ack --heading --break "$@" | uselect -s "ge $*" -i -m '^\d+:' )"
     }
 else
     ge() {
@@ -29,7 +29,7 @@ fi
 
 # le <locate-args> - locate files by name and edit (*L*ocate and *E*dit)
 le() {
-    uedit $( locate "$@" | perl -nlE 'say if -f' | uselect -s "le $*" )
+    uedit "$( locate "$@" | perl -nlE 'say if -f' | uselect -s "le $*" )"
 }
 
 
